@@ -1,0 +1,27 @@
+#ifndef _LCOM_8042_H_
+#define _LCOM_8042_H_
+
+// GENERAL DEFINES
+#define BIT(n) (0x01<<(n))
+#define DELAY_US 20000
+
+// KBC INTERRUPTION REQUEST LINE
+#define KBD_IRQ_LINE 1
+
+// KBC BUFFERS AND REGISTERS
+#define STATUS_REG 0x64
+#define KBC_CMD_REG 0x64
+#define IN_BUF 0x60
+#define OUT_BUF 0x60
+
+// KBC COMMANDS AND RETURNS
+#define ACK 0xFA
+#define ERROR_CODE 0xFC
+#define RESEND_CODE 0xFE
+#define IBF BIT(1)
+#define OBF BIT(0)
+#define PARITY_ERROR BIT(7)
+#define TIMEOUT_ERROR BIT (6)
+#define SET_INDICATORS 0xED
+
+#endif
