@@ -155,10 +155,13 @@ int timer_test_square(unsigned long freq) {
 
 int timer_test_int(unsigned long time) {
 	int ret = 0;
-
-	int irq_set = BIT(timer_subscribe_int());
+	hook_id = 1;
+	int irq_set = BIT(hook_id);
 	int ipc_status;
 	message msg;
+
+	if(timer_subscribe_int() != 0)
+		ret = 1;
 
 	counter = 0;
 
@@ -187,7 +190,7 @@ int timer_test_int(unsigned long time) {
 		}
 	}
 
-	if (timer_unsubscribe_int() != OK) // If an error has occurred before, it will show up now and return 1
+	if (timer_unsubscribe_int() != 0) // If an error has occurred before, it will show up now and return 1
 		ret = 1;
 
 	return ret;
