@@ -11,6 +11,9 @@ int main(int argc, char **argv) {
 	/* Initialize service */
 	sef_startup();
 
+	/* Enable IO-sensitive operations for ourselves */
+	sys_enable_iop(SELF);
+
 	printf("lab3: The PC's Keyboard\n");
 
 	if (argc == 1) {

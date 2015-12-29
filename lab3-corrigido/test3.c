@@ -3,8 +3,12 @@
 #include "8042.h"
 #include "timer.h"
 
-#define ESCsc 0x01
+#define ESCmc 0x01	// not used
 #define ESCbc 0x81
+
+void testscan();
+extern unsigned char obf;
+extern unsigned char err;
 
 int kbd_subscribe(unsigned int *hook_id) {
 	int ret = 0;
@@ -40,7 +44,7 @@ int verify_IBF_flag() {
 	while ((limiter < 10) && (ret == 1)) {
 		sys_inb(STATUS_REG, &status); /* assuming it returns OK */
 		/* loop while 8042 input buffer is not empty */
-		if ((status & (PARITY_ERROR | TIMEOUT_ERROR | IBF)) == BIT(1)) {
+		if ((status & (PARITY_ERROR | TIMEOUT_ERROR | IBF)) != 0) {	// BIT(1) must not be set
 			tickdelay(micros_to_ticks(DELAY_US));
 			limiter++;
 		}
@@ -58,8 +62,8 @@ unsigned long kbd_read()
 
 	while ((limiter < 10) && (ret == 1)) {
 		sys_inb(STATUS_REG, &status); /* assuming it returns OK */
-		/* loop while 8042 input buffer is not empty */
-		if (status & (PARITY_ERROR | TIMEOUT_ERROR | OBF) == BIT(0)) {
+		/* loop while 8042 output buffer is empty */
+		if ((status & (PARITY_ERROR | TIMEOUT_ERROR | OBF)) != BIT(0)) {
 			tickdelay(micros_to_ticks(DELAY_US));
 			limiter++;
 		}
@@ -96,7 +100,7 @@ int kbd_test_scan(unsigned short ass) {
 		ret = 1;
 
 	while (ch != ESCbc) { /* You may want to use a different condition */
-		 /* Get a request message. */
+		/* Get a request message. */
 		int r = driver_receive(ANY, &msg, &ipc_status);
 		if (r != 0) {
 			printf("driver_receive failed with: %d", r);
@@ -106,12 +110,27 @@ int kbd_test_scan(unsigned short ass) {
 			switch (_ENDPOINT_P(msg.m_source)) {
 			case HARDWARE: /* hardware interrupt notification */
 				if (msg.NOTIFY_ARG & irq_set) { /* subscribed interrupt */
-					// ignores the ass variable
-					if (ch == 0xE0)	// two char scancode beginning
-						ch = (ch << 8) | kbd_read();
-					else
-						ch = kbd_read();
-					show_char(ch);
+					switch (ass) {
+					case 0:
+						if (ch == 0xE0)	// two char scancode beginning
+							ch = (ch << 8) | kbd_read();
+						else
+							ch = kbd_read();
+						show_char(ch);
+						break;
+					case 1:
+						testscan();
+						if (ch == 0xE0)	// two char scancode beginning
+							ch = (ch << 8) | obf;
+						else
+							ch = obf;
+						show_char(ch);
+						if (err != 0)
+							ret = 1;
+						break;
+					default:
+						break;
+					}
 				}
 				break;
 			default:
@@ -119,7 +138,7 @@ int kbd_test_scan(unsigned short ass) {
 			}
 		}
 		else { /* received a standard message, not a notification */
-			   /* no standard messages expected: do nothing */
+			/* no standard messages expected: do nothing */
 		}
 	}
 
@@ -238,7 +257,7 @@ int kbd_test_timed_scan(unsigned short n) {
 
 	if (ret == 0)
 		while (ch != ESCbc && counter < n * 60) { /* You may want to use a different condition */
-			 /* Get a request message. */
+			/* Get a request message. */
 			int r = driver_receive(ANY, &msg, &ipc_status);
 			if (r != 0) {
 				printf("driver_receive failed with: %d", r);
@@ -265,7 +284,7 @@ int kbd_test_timed_scan(unsigned short n) {
 				}
 			}
 			else { /* received a standard message, not a notification */
-				   /* no standard messages expected: do nothing */
+				/* no standard messages expected: do nothing */
 			}
 		}
 

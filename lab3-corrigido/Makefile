@@ -3,7 +3,7 @@ COMPILER_TYPE= gnu
 CC=gcc
 
 PROG=	lab3
-SRCS=	lab3.c test3.c timer.c
+SRCS=	lab3.c test3.c timer.c kbd_test_scan_assembly.S
 
 CCFLAGS= -Wall
 
